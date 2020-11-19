@@ -1,0 +1,172 @@
+
+Nordic nRF5 SDK和softdevice介绍
+SDK和Softdevice的区别是什么？怎么选择SDK和softdevice版本？芯片，SDK和softdevice有没有版本兼容问题？怎么理解SDK目录结构？SDK帮助文档在哪里？Softdevice帮助文档在哪里？如何选择某个SDK例子 (example) 以开始我们的BLE开发之旅？本文将对以上问题进行解答。
+
+Nordic目前有2套完全独立的SDK：nRF5 SDK和nRF Connect SDK。一般来说，开发nRF51/52产品推荐使用nRF5 SDK，开发nRF91/nRF53等新产品推荐使用nRF connect SDK。本文将对nRF5 SDK进行介绍，从形式上来说，nRF5 SDK其实就是一个产品压缩包，如下所示，其官网下载地址为：https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download#infotabs。
+
+
+
+ 
+
+ 除了nRF5 SDK，Nordic还针对某些特殊应用领域推出了一些专门的SDK，这些SDK和nRF5 SDK采用了相同的软件架构，相同的驱动和库，以及相同的编码风格。对开发者来说，只要熟悉了nRF5 SDK，这些特殊SDK上手也会比较快。Nordic提供了如下种类的特殊SDK：
+
+nRF5 SDK for Mesh，用于开发蓝牙Mesh应用
+nRF5 SDK for Thread and ZigBee，用于开发ZigBee应用或者Thread应用
+nRF SDK HK，用于开发苹果homekit应用
+Thingy SDK，用于开发Nordic Thingy传感器套件
+nRFready Smart Remote 3，用于开发蓝牙语音电视机遥控器
+nRFready Desktop 2，用于开发蓝牙或者2.4G的无线键盘和鼠标
+如果你的应用是上面6种垂直应用，那么建议你选择上面的SDK，否则一律推荐使用nRF5 SDK。下面将对nRF5 SDK进行阐述。
+
+1. nRF5 SDK和Softdevice概述
+1)        nRF5 SDK是Nordic nRF51/52系列产品软件开发环境，Softdevice是Nordic蓝牙协议栈的名称，为了方便用户的使用，每一个版本的SDK都包含了该版本支持的所有softdevice，请到SDK根目录\components\softdevice目录查看具体支持的softdevice类别和版本。SDK官网下载地址为：https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download#infotabs。
+
+2)        nRF5 SDK版本编号，nRF51 SDK v9.0.0，nRF51 SDK v10.0.0，nRF5 SDK v11.0.0, nRF5 SDK v12.0.0 …目前最新版是nRF5 SDK v16.0.0。SDK9/10只支持nRF51系列芯片，SDK11/12同时支持nRF51和nRF52系列芯片，而SDK13/14/15/16只支持nRF52系列芯片。这里顺带提一下，如果你需要使用多个版本nRF5 SDK，那么就会同时用到多个device family pack（nRF MDK），请按照低版本先装高版本后装的顺序来安装（如果SDK例程报device family pack错误，请先完全卸载之前的device family pack，再按照由低到高的顺序重装一遍所有的pack）
+
+3)        Nordic一般推荐使用最新版的SDK来开发你的应用，因为其功能最强大，考虑最周全，可靠性最好。比如nRF51系列，推荐使用SDK12.3.0（12.3.0已经是nRF51能支持的最高版本SDK了），nRF52系列推荐使用SDK16.0.0。但是最新版的SDK占用的Flash资源和RAM资源比较多，而且新版SDK为了兼容各种情况设计得也比较复杂。为了节省资源或者让应用看起来简洁，客户也可以使用某些老版本的SDK。对于老用户来说，要不要升级SDK，是一个老生常谈的问题，我的建议是：测试为王，只要你的应用测试下来没有任何问题，你的SDK就是稳定和可靠的，就不需要升级SDK。当然，如果你要加入新SDK的功能和特性，那么就需要升级SDK了。请打开SDK根目录\documentation\release_notes.txt以查看最新版SDK的新功能和新特性。
+
+4)        Softdevice命名规则一。Softdevice包括两种底层协议栈：BLE和ANT，BLE包括两种角色：central（又称master）和peripheral（又称slave），为此需要给这些不同类型的协议栈进行命名区分。协议栈命名格式为Sxyz，其中
+
+x – 表示协议栈的类型，1表示BLE协议栈，2表示ANT协议栈，3表示同时支持BLE和ANT
+y – 表示BLE角色，1表示从设备，2表示主设备，3表示同时支持主设备和从设备
+z – 表示芯片类型，0表示nRF51系列，2表示nRF52系列
+比如S110，表示只支持从设备模式的nRF51 BLE协议栈 
+比如S130，表示既支持从设备模式又支持主设备模式的nRF51 BLE协议栈
+比如S132，表示既支持从设备模式又支持主设备模式的nRF52 BLE协议栈
+比如S212，表示nRF52 ANT协议栈
+比如S332，表示nRF52既支持BLE协议栈又支持ANT协议栈，而且BLE协议栈既支持从设备模式又支持主设备模式
+5)        Softdevice命名规则二。大体上跟命名规则1相同，但是协议栈编号最后2位跟芯片型号一样，比如S140，代表这个协议栈专门用于nRF52840。由于52840 Flash空间很大，没有必要做各种细分的协议栈，S140协议栈是一个大而全的协议栈，包含蓝牙所有功能。
+
+6)        Softdevice版本编号，从1.0.0开始编号，然后2.0.0，3.0.0，…S110最新版本是8.0.0，S130最新版本是2.0.1，S132/S140/S112最新版本是7.0.0。
+
+7)        SDK和softdevice兼容性问题。不要查看兼容性表格，直接打开SDK，直接使用SDK里面的softdevice，肯定没有问题。比如S132 在SDK如下文件夹中：
+
+
+
+有时候你在Nordic官网下载SDK的时候，比如SDK15.2.0，官网会自动绑定一个比SDK安装目录里面自带的协议栈版本更高版本的协议栈，如下图所示：
+
+
+
+ 
+
+那么这个时候推荐使用该绑定的高版本协议栈，原因如下：
+
+再完美的协议栈难免也会有bug，此时Nordic会把bug修复的协议栈单独发布出来，比如nRF5 SDK 15.2.0自带的S140协议栈版本为6.1.0，一般来说，直接用这个版本的协议栈就可以了，但是这个版本的协议栈的主机模式有一个小bug，为此Nordic单独发布了6.1.1版S140协议栈，此时用户就需要去官网单独下载这个最新版的协议栈了。记住，大家只需要下载版本号数字最后一位有变化的即可，比如6.1.1相比6.1.0，最后一个数字有升级，那么推荐大家直接下载下来，然后覆盖原来老的协议栈即可。如果版本号第1个数字就有变化，意味着两个版本的协议栈是不兼容的，此时一般SDK也会跟着升级的，比如7.0.0相比6.1.0，这个就属于大升级了，此时建议直接使用与之配套的最新版本SDK来进行开发，而不是把协议栈进行简单覆盖。（当然，你也可以自己把7.0.0的协议栈移植到老SDK中，这个稍微麻烦一些，不过Nordic也有相关移植文档供大家参考）。如下列出了常用协议栈的发布页面：
+
+S140协议栈最新版本查询页面：https://www.nordicsemi.com/Software-and-Tools/Software/S140/Download#infotabs
+S132协议栈最新版本查询页面：https://www.nordicsemi.com/Software-and-Tools/Software/S132/Download#infotabs
+其他类型协议栈，比如S130， S112，S110等，请按照上述方式自己去寻找相应下载页面。
+ 
+
+8)        芯片版本和SDK版本兼容性问题。如果你使用的是Nordic最新版芯片，就没有这个所谓的兼容性问题，直接下载最新版本的SDK即可。如果你不幸还有Nordic老版本芯片库存，那么只能使用某些老版本的SDK，具体请参考兼容性表格。
+
+nRF52840兼容性表格：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcomp_matrix_nrf52840%2FCOMP%2Fnrf52840%2FnRF52840_ic_rev_sdk_sd_comp_matrix.html&cp=4_0_3_2
+nRF52832兼容性表格：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcomp_matrix_nrf52832%2FCOMP%2Fnrf52832%2Fic_rev_sdk_sd_comp_matrix.html&cp=4_2_2_2 
+nRF52810兼容性表格：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcomp_matrix_nrf52810%2FCOMP%2Fnrf52810%2FnRF52810_ic_rev_sdk_sd_comp_matrix.html&cp=3_3_2_2
+nRF52811兼容性表格：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcomp_matrix_nrf52811%2FCOMP%2Fnrf52811%2Fnrf52811_ic_rev_sdk_sd_comp_matrix.html&cp=3_2_2_2
+之所以会有这个兼容性问题，是因为新版本SDK是为新版本芯片服务的，也就是说新版本SDK默认芯片以前的bug已经修复了，所以新版本SDK不会包含老版本芯片的workaround（补丁），导致老版本芯片运行在最新版本SDK上会有一些问题。
+
+2. nRF5 SDK目录结构解读
+欲下载nRF5 SDK，请参考“Nordic nRF51/nRF52开发环境搭建”
+
+以SDK12.3.0为例，nRF5 SDK目录结构如下所示：
+
+ 
+
+ 
+
+-components. 该目录包含了Nordic自己开发的SDK源代码，切记：在产品开发过程中，不要去修改该目录下的任何文件！components目录结构如下所示：
+
+ 
+
+ 
+
+这里特别说明一下，Nordic现在有2套芯片外设驱动，SDK14及以前版本SDK使用nrf_drv老版本外设驱动（又称legacy），SDK15使用nrfx新版本外设驱动（nrfx驱动同时兼容nRF5 SDK和nRF Connect SDK），在SDK15中，nrfx驱动源代码在如下目录：
+
+ 
+
+ 
+
+-examples. 该目录包含了丰富的应用示例，不仅包含BLE应用示例，也包含每个外设如何使用的示例，还包含bootloader示例代码。一般来说，开发过程中碰到的大部分问题，都可以在这个目录找到示例。examples目录结构如下所示：
+
+ 
+
+ 
+
+客户用得最多的两个目录是：\ble_peripheral和\peripheral。\ble_peripheral目录包含了BLE作为从模式的应用示例，而\peripheral包含了所有外设应用示例。\ble_peripheral目录结构如下所示：
+
+ 
+
+ 
+
+\peripheral目录结构如下所示：
+
+ 
+
+ 
+
+在Nordic SDK中，经常会碰到deprecated和experimental目录，他们的作用如下：
+
+\deprecated，该目录的内容已被舍弃，并有新版本来替代他们。但为了兼容老产品，SDK还是将其保留下来，比如如下目录：components\drivers_nrf\twi_master\deprecated，如果你是新用户，切记不要使用\deprecated目录下的API。
+
+\experimental 。SDK不断的有new feature/new example出现，有些new feature/new example推出来不久，还没有经过市场大规模验证，对此Nordic会在这些new feature/new example前面加一个前缀：experimental，比如：examples\ble_peripheral\experimental_ble_app_buttonless_dfu，碰到experimental一定要小心，里面有可能有bug，希望用户自己进行充分测试，以保证产品的质量。
+
+3. nRF5 SDK和softdevice帮助文档
+1)       不管是SDK还是softdevice自有 API，建议首先查看SDK自带的API说明，记住：API说明一般都放在头文件中，而不是.c文件中，里面有该API详细说明和使用注意事项。比如softdevice_enable() API相关说明在头文件softdevice_handler.h中：
+
+
+
+ 
+
+再比如sd_ble_gatts_hvx API说明文档在头文件ble_gatts.h中：
+
+
+
+ 
+
+再比如ble_advertising_init API说明文档在ble_advertising.h中：
+
+
+
+ 
+
+2)        Softdevice还有一份专门的spec，来阐述softdevice工作原理，资源占用情况，性能参数，使用注意事项等，建议大家一定要阅读该份spec：
+
+S140 spec：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fsds_s140%2FSDS%2Fs1xx%2Fs140.html&cp=3_4_2_0
+S132 spec：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fsds_s132%2FSDS%2Fs1xx%2Fs130.html&cp=3_4_1_0
+S112 spec：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fsds_s112%2FSDS%2Fs1xx%2Fs112.html&cp=3_4_0_0
+S130 spec：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s130.sds%2Fdita%2Fsoftdevices%2Fs130%2Fs130sds.html&cp=4_7_2_0
+ 
+
+3)       SDK还有在线帮助文档和离线帮助文档，两者一模一样，离线帮助文档就是通过在线帮助文档生成的，以方便网络不好的用户使用。你可以根据自己的情况选择其中一份帮助文档即可，帮助文档链接：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fexamples.html&cp=5_1_4
+
+
+
+  
+
+以SDK15.3.0在线帮助文档为例，其主界面如下所示。展开帮助文档左边的目录，你会发现：帮助文档目录层级跟SDK目录层级是一一对应的。
+
+ 
+
+ 
+
+
+
+ 
+
+因此对SDK有任何疑问，可以直接去查对应的帮助文档说明，比如如果你想了解nRF5_SDK安装目录\examples\peripheral\spi这个例子是干什么的，直接找到帮助文档对应的条目：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fspi_master_example.html&cp=5_1_4_6_37，你就会明白这是一个告诉你如何使用SPI master的例子。再比如你想知道nRF5_SDK_15.2.0_9412b96\examples\dtm\direct_test_mode这个例子是不是讲如何进行DTM测试的，找到帮助文档相关条目说明：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fble_sdk_app_dtm_serial.html&cp=5_1_4_5，你就会知道自己的猜测是对的。
+
+ 
+
+4. 选择一个SDK 例子（example）以开始你的BLE开发之旅
+Nordic nRF5 SDK包含了丰富的应用实例，一般来说，我们的开发都是基于其中某一个例子来开始的 。所有example都包含在SDK根目录\examples目录下，
+
+其在线帮助文档链接为：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fexamples.html&cp=5_1_4，
+
+比如你想了解” nRF5_SDK安装目录\examples\ble_peripheral\ble_app_gls”这个例子是干什么的，找到该例子对应的帮助文档说明：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fble_sdk_app_gls.html&cp=5_1_4_2_2_11，通过查看例子说明，你会发现这是一个标准的血糖仪例子，里面使用了bonding，而且bonding的时候，需要输入PIN码，并支持LESC模式。看完这个例子说明，你就大概明白这个例子跟你的应用接不接近，如果你也需要使用带PIN码的bonding，那么就可以选择该例子作为基础来开始你的开发。 
+
+再比如nRF5_SDK安装目录\examples\ble_peripheral\ble_app_uart，例子说明链接为：https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.3.0%2Fble_sdk_app_nus_eval.html&cp=5_1_4_2_2_24，
+
+通过查看说明文档，我们知道这个例子是把蓝牙作为透传来使用的，如果你的应用就是把蓝牙作为一个透传模块来使用，那么你可以以这个例子为基础来开始你的开发。 
+
+通过一个一个例子的查看，相信你马上可以找到你需要的例子，然后在此基础上，开始你的BLE开发之旅https://www.cnblogs.com/iini/p/9095551.html
